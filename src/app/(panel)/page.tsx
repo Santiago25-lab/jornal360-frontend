@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ArrowRight, CalendarDays, Clock, PiggyBank, Rocket, Stethoscope, Users, Wallet } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GraficaCosto, GraficaDistribucion } from '@/components/graficas';
 import { Indicador } from '@/components/indicador';
 import { Boton, Cargando, cx, Insignia, Pildoras, Tarjeta, Vacio } from '@/components/ui';
@@ -16,10 +16,12 @@ export default function Inicio() {
   const { datos: p, cargando } = useDatos<any>(`/reportes/panel?meses=${meses}`);
   const { datos: hoy } = useDatos<any>('/asistencia/hoy');
 
-  const saludo = (() => {
+  // Se calcula en el navegador: al compilar no se sabe la hora de quien abre la página.
+  const [saludo, setSaludo] = useState('Hola');
+  useEffect(() => {
     const h = new Date().getHours();
-    return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  })();
+    setSaludo(h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches');
+  }, []);
 
   return (
     <div className="space-y-6">
