@@ -1,0 +1,11 @@
+{
+  "name": "Jornal 360",
+  "short_name": "Jornal 360",
+  "description": "Marcación de asistencia y nómina",
+  "start_url": "/marcar",
+  "display": "standalone",
+  "background_color": "#f5f5fb",
+  "theme_color": "#6d5dfc",
+  "lang": "es-CO",
+  "icons": [{ "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

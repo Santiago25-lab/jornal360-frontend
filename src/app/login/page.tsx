@@ -1,0 +1,79 @@
+'use client';
+
+import { Eye, EyeOff } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, Suspense, useEffect, useState } from 'react';
+import { Logo } from '@/components/logo';
+import { Aviso, Boton, Campo, Entrada } from '@/components/ui';
+import { guardarToken, obtenerToken, post } from '@/lib/api';
+
+function Formulario() {
+  const router = useRouter();
+  const q = useSearchParams();
+  const [usuario, setUsuario] = useState('');
+  const [password, setPassword] = useState('');
+  const [ver, setVer] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(false);
+
+  useEffect(() => {
+    if (obtenerToken() && !q.get('vencida') && !q.get('inactividad')) router.replace('/');
+  }, [router, q]);
+
+  const entrar = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setCargando(true);
+    try {
+      const r = await post<{ token: string; usuario: any }>('/auth/login', { usuario, password });
+      guardarToken(r.token);
+      router.replace(r.usuario.debeCambiarPassword ? '/configuracion?seccion=clave&cambiar=1' : '/');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Logo tamano={40} />
+        </div>
+        <form onSubmit={entrar} className="rounded-2xl border border-borde bg-tarjeta p-6 shadow-suave animate-entrar">
+          <h1 className="text-xl font-semibold">Iniciar sesión</h1>
+          <p className="mb-5 mt-1 text-sm text-suave">Nómina y asistencia para su empresa</p>
+          {q.get('vencida') && <div className="mb-4"><Aviso tono="alerta">Su sesión venció. Inicie sesión de nuevo.</Aviso></div>}
+          {q.get('inactividad') && <div className="mb-4"><Aviso tono="info">Cerramos la sesión por inactividad.</Aviso></div>}
+          {error && <div className="mb-4"><Aviso tono="peligro">{error}</Aviso></div>}
+          <div className="space-y-4">
+            <Campo etiqueta="Usuario">
+              <Entrada autoComplete="username" value={usuario} onChange={(e) => setUsuario(e.target.value)} required autoFocus />
+            </Campo>
+            <Campo etiqueta="Contraseña">
+              <div className="relative">
+                <Entrada type={ver ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" />
+                <button type="button" onClick={() => setVer((v) => !v)} className="absolute right-3 top-2.5 text-suave" aria-label={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  {ver ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </Campo>
+            <Boton type="submit" tamano="lg" className="w-full" cargando={cargando}>
+              Entrar
+            </Boton>
+          </div>
+        </form>
+        <p className="mt-6 text-center text-xs text-suave">Jornal 360 · Hecho para el Código Sustantivo del Trabajo de Colombia</p>
+      </div>
+    </div>
+  );
+}
+
+export default function PaginaLogin() {
+  return (
+    <Suspense>
+      <Formulario />
+    </Suspense>
+  );
+}

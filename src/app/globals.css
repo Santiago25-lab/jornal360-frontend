@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fondo: 245 245 251;
+  --tarjeta: 255 255 255;
+  --borde: 232 231 242;
+  --texto: 24 24 39;
+  --suave: 96 98 122;
+  --marca-50: 243 241 255;
+  --marca-100: 230 226 255;
+  --marca-500: 109 93 252;
+  --marca-600: 94 77 240;
+  --marca-700: 76 60 214;
+  --exito: 21 158 101;
+  --alerta: 196 125 0;
+  --peligro: 214 48 68;
+  color-scheme: light;
+}
+
+.dark {
+  --fondo: 16 16 26;
+  --tarjeta: 26 26 40;
+  --borde: 44 44 64;
+  --texto: 236 236 246;
+  --suave: 160 162 186;
+  --marca-50: 36 32 70;
+  --marca-100: 50 44 100;
+  --marca-500: 139 124 255;
+  --marca-600: 155 142 255;
+  --marca-700: 176 166 255;
+  --exito: 52 199 135;
+  --alerta: 240 170 40;
+  --peligro: 255 102 120;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: rgb(var(--fondo));
+  color: rgb(var(--texto));
+}
+
+body {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: rgb(var(--borde));
+}
+
+input,
+select,
+textarea {
+  font-size: 15px;
+}
+
+::selection {
+  background: rgb(var(--marca-100));
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media print {
+  aside,
+  header,
+  .no-imprimir {
+    display: none !important;
+  }
+}
