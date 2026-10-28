@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { get, post } from '@/lib/api';
 import { useDatos } from '@/lib/datos';
-import { fechaLarga, hoy, NOMBRE_NOVEDAD, NOMBRE_TIPO_HORA } from '@/lib/formato';
+import { fechaLarga, hoy, NOMBRE_NOVEDAD, NOMBRE_TIPO_HORA, numero } from '@/lib/formato';
 import { Aviso, Boton, Campo, Entrada, EntradaDinero, Modal, Opciones, Selector, useAccion } from './ui';
 
 function SelectorEmpleado({ valor, onCambio }: { valor: string; onCambio: (v: string) => void }) {
@@ -122,7 +122,7 @@ export function ModalNovedadDias({ abierto, onCerrar, empleadoId, alGuardar }: {
         {d.tipo === 'vacaciones' && vista && (
           <Aviso tono="info" titulo={`Regresa el ${fechaLarga(vista.regreso)}`}>
             Vacaciones del {fechaLarga(vista.inicioReal)} al {fechaLarga(vista.fin)}. Se saltan festivos y días de descanso.
-            {saldo.datos && ` Días pendientes del empleado: ${saldo.datos.pendientes}.`}
+            {saldo.datos && ` Días pendientes del empleado: ${numero(saldo.datos.pendientes, 2)}.`}
           </Aviso>
         )}
         {d.tipo === 'licencia_maternidad' && <Aviso>La licencia dura las semanas configuradas (18 por defecto) y la paga la EPS.</Aviso>}
