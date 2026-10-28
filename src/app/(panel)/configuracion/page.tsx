@@ -3,7 +3,7 @@
 import { Building2, CalendarDays, Calculator, Clock, Database, FileCog, KeyRound, Layers, ListTree, QrCode, ShieldCheck, Table2, Users } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { useEmpresa } from '@/components/config/comun';
+import { guardarPendientes, useEmpresa } from '@/components/config/comun';
 import { SeccionConceptos } from '@/components/config/conceptos';
 import { SeccionEstructura } from '@/components/config/estructura';
 import { CambiarPassword, SeccionAsistencia, SeccionCalendario, SeccionCampos, SeccionEmpresa, SeccionJornada, SeccionReglas } from '@/components/config/general';
@@ -44,7 +44,9 @@ function Contenido() {
   const pedida = q.get('seccion') as S | null;
   const s: S = forzarClave ? 'clave' : pedida && SECCIONES.some((x) => x.valor === pedida) ? pedida : 'empresa';
   const e = useEmpresa();
-  const ir = (v: S) => router.replace(`/configuracion?seccion=${v}`, { scroll: false });
+  const ir = async (v: S) => {
+    if (await guardarPendientes()) router.replace(`/configuracion?seccion=${v}`, { scroll: false });
+  };
 
   return (
     <>

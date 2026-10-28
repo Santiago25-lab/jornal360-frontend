@@ -1,7 +1,7 @@
 'use client';
 
 import { Save } from 'lucide-react';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { patch } from '@/lib/api';
 import { useDatos } from '@/lib/datos';
 import { useSesion } from '@/lib/sesion';
@@ -41,7 +41,47 @@ export function useBorrador<T>(original: T | undefined | null) {
   return { b, setB, poner, cambiado };
 }
 
-export function Seccion({ titulo, descripcion, children, cambiado, guardando, onGuardar, accion }: { titulo: string; descripcion?: string; children: ReactNode; cambiado?: boolean; guardando?: boolean; onGuardar?: () => void; accion?: ReactNode }) {
+// ---------- Cambios sin guardar ----------
+// Cada sección con cambios pendientes se anota aquí para que el asistente (y quien quiera)
+// pueda guardarlos todos antes de cambiar de pantalla.
+const pendientes = new Map<string, () => unknown>();
+
+/** Guarda todas las secciones con cambios. Devuelve false si alguna no se pudo guardar. */
+export async function guardarPendientes(): Promise<boolean> {
+  for (const [id, guardar] of [...pendientes]) {
+    const r = await guardar();
+    if (r === null || r === false) return false;
+    pendientes.delete(id);
+  }
+  return true;
+}
+
+export const hayPendientes = () => pendientes.size > 0;
+
+function useCambiosPendientes(cambiado: boolean | undefined, onGuardar: (() => unknown) | undefined) {
+  const id = useId();
+  const ultimo = useRef(onGuardar);
+  ultimo.current = onGuardar;
+  useEffect(() => {
+    if (!cambiado || !ultimo.current) {
+      pendientes.delete(id);
+      return;
+    }
+    pendientes.set(id, () => ultimo.current?.());
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', avisar);
+    return () => {
+      pendientes.delete(id);
+      window.removeEventListener('beforeunload', avisar);
+    };
+  }, [cambiado, id]);
+}
+
+export function Seccion({ titulo, descripcion, children, cambiado, guardando, onGuardar, accion }: { titulo: string; descripcion?: string; children: ReactNode; cambiado?: boolean; guardando?: boolean; onGuardar?: () => unknown; accion?: ReactNode }) {
+  useCambiosPendientes(cambiado, onGuardar);
   return (
     <Tarjeta
       titulo={titulo}
@@ -49,13 +89,21 @@ export function Seccion({ titulo, descripcion, children, cambiado, guardando, on
       accion={
         accion ??
         (onGuardar && (
-          <Boton tamano="sm" disabled={!cambiado} cargando={guardando} icono={<Save className="h-4 w-4" />} onClick={onGuardar}>
+          <Boton tamano="sm" disabled={!cambiado} cargando={guardando} icono={<Save className="h-4 w-4" />} onClick={() => onGuardar()}>
             Guardar
           </Boton>
         ))
       }
     >
       {children}
+      {onGuardar && cambiado && (
+        <div className="sticky bottom-3 z-10 mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alerta/40 bg-alerta/10 px-4 py-3 backdrop-blur">
+          <span className="text-sm font-medium">Tiene cambios sin guardar</span>
+          <Boton tamano="sm" cargando={guardando} icono={<Save className="h-4 w-4" />} onClick={() => onGuardar()}>
+            Guardar cambios
+          </Boton>
+        </div>
+      )}
     </Tarjeta>
   );
 }

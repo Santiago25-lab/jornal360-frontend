@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useEmpresa } from '@/components/config/comun';
+import { guardarPendientes, useEmpresa } from '@/components/config/comun';
 import { SeccionEstructura } from '@/components/config/estructura';
 import { SeccionAsistencia, SeccionCalendario, SeccionEmpresa } from '@/components/config/general';
 import { mostrarValor } from '@/components/config/parametros';
@@ -27,12 +27,15 @@ export default function Asistente() {
     if (e.empresa && paso === null) setPaso(Math.min(e.empresa.asistentePaso ?? 0, PASOS.length - 1));
   }, [e.empresa, paso]);
 
-  const ir = (n: number) => {
+  // Antes de cambiar de paso se guarda lo que haya quedado pendiente en la pantalla actual.
+  const ir = async (n: number) => {
+    if (!(await guardarPendientes())) return;
     setPaso(n);
     patch('/empresa', { asistentePaso: n }).catch(() => undefined);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const terminar = async () => {
+    if (!(await guardarPendientes())) return;
     await e.guardarEmpresa({ asistenteCompletado: true, asistentePaso: PASOS.length - 1 });
     await sesion.recargar();
     router.push('/');
