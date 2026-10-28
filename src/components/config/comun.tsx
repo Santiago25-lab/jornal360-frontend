@@ -4,12 +4,14 @@ import { Save } from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { patch } from '@/lib/api';
 import { useDatos } from '@/lib/datos';
+import { useSesion } from '@/lib/sesion';
 import { Boton, Cargando, Entrada, Tarjeta, useAccion } from '../ui';
 
 /** Carga la empresa con su configuración y guarda una sección a la vez. */
 export function useEmpresa() {
   const { datos, cargando, recargar, setDatos } = useDatos<any>('/empresa');
   const { ejecutar, cargando: guardando } = useAccion();
+  const sesion = useSesion();
   const guardarConfig = async (cambios: Record<string, unknown>) => {
     const r = await ejecutar(() => patch('/empresa/configuracion', cambios), 'Cambios guardados');
     if (r && datos) setDatos({ ...datos, configuracion: r });
@@ -17,7 +19,11 @@ export function useEmpresa() {
   };
   const guardarEmpresa = async (cambios: Record<string, unknown>) => {
     const r = await ejecutar(() => patch('/empresa', cambios), 'Datos de la empresa guardados');
-    if (r) setDatos(r);
+    if (r) {
+      setDatos(r);
+      // El encabezado muestra la razón social de la sesión: se refresca para ver el cambio de una vez.
+      sesion.recargar();
+    }
     return r;
   };
   return { empresa: datos, cargando, recargar, guardarConfig, guardarEmpresa, guardando };
