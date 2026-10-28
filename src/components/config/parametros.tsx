@@ -177,6 +177,8 @@ function ModalParametro({ p, onCerrar, recargar }: { p: any; onCerrar: () => voi
   const [afectados, setAfectados] = useState<any[] | null>(null);
   const { ejecutar, cargando } = useAccion();
   const { confirmar } = useAvisos();
+  // Solo un valor rige hoy: el de fecha más reciente que ya empezó.
+  const vigente = [...p.vigencias].filter((v: any) => v.desde <= hoy()).sort((a: any, b: any) => b.desde.localeCompare(a.desde))[0];
   const guardar = async () => {
     const r: any = await ejecutar((confirmado) => post(`/parametros/${p.codigo}/vigencias`, { desde, valor: aGuardar(p.tipo, valor), confirmar: confirmado }), 'Valor guardado');
     if (r) {
@@ -225,7 +227,7 @@ function ModalParametro({ p, onCerrar, recargar }: { p: any; onCerrar: () => voi
             columnas={[
               { clave: 'desde', titulo: 'Desde', celda: (v: any) => fecha(v.desde) },
               { clave: 'valor', titulo: 'Valor', derecha: true, celda: (v: any) => <span className="tabular">{mostrarValor(p.tipo, v.valor)}</span> },
-              { clave: 'estado', titulo: '', celda: (v: any) => (v.desde > hoy() ? <Insignia tono="marca">Programado</Insignia> : v.valor === p.valorActual && <Insignia tono="exito">Vigente</Insignia>) },
+              { clave: 'estado', titulo: '', celda: (v: any) => (v.desde > hoy() ? <Insignia tono="marca">Programado</Insignia> : v.id === vigente?.id && <Insignia tono="exito">Vigente</Insignia>) },
               {
                 clave: 'acc',
                 titulo: '',
