@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, FlaskConical, History, Plus, RotateCcw, Save, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, FlaskConical, History, Landmark, Plus, RotateCcw, Save, Trash2, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { borrar, patch, post } from '@/lib/api';
 import { useCatalogos } from '@/lib/catalogos';
@@ -81,6 +81,7 @@ export function SeccionConceptos() {
         </Boton>
       }
     >
+      <SectorPublico alAplicar={recargar} />
       <Buscador valor={buscar} onCambio={setBuscar} placeholder="Buscar concepto…" className="mb-4" />
       {cargando && !datos ? (
         <Cargando />
@@ -130,6 +131,48 @@ export function SeccionConceptos() {
         />
       )}
     </Seccion>
+  );
+}
+
+/** Alcaldías y gobernaciones: primas y bonificaciones públicas en un clic. */
+function SectorPublico({ alAplicar }: { alAplicar: () => void }) {
+  const { ejecutar, cargando } = useAccion();
+  const { confirmar } = useAvisos();
+  const [hecho, setHecho] = useState<string[] | null>(null);
+  const aplicar = async () => {
+    const ok = await confirmar({
+      titulo: 'Ajustes del sector público territorial',
+      mensaje:
+        'Cambia la prima de servicios a 15 días por año, deja de provisionar intereses de cesantías a los afiliados al Fondo Nacional del Ahorro y agrega prima de navidad, prima de vacaciones, bonificación por servicios prestados, bonificación de recreación y subsidio de alimentación (en borrador). Los topes vienen con valores de ejemplo: confírmelos con el decreto salarial del año en Parámetros.',
+      confirmar: 'Aplicar',
+    });
+    if (!ok) return;
+    const r: any = await ejecutar(() => post('/empresa/sector-publico'), 'Ajustes del sector público aplicados');
+    if (r) {
+      setHecho(r.hecho);
+      alAplicar();
+    }
+  };
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-borde p-4">
+      <div className="flex items-start gap-3">
+        <Landmark className="mt-0.5 h-5 w-5 text-marca-600" />
+        <div>
+          <p className="font-medium">¿Es una entidad pública territorial?</p>
+          <p className="text-sm text-suave">Alcaldías y gobernaciones: primas y bonificaciones de los Decretos 1042 y 1045 de 1978.</p>
+          {hecho && (
+            <ul className="mt-2 list-disc pl-5 text-sm">
+              {hecho.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+      <Boton tamano="sm" variante="secundario" cargando={cargando} onClick={aplicar}>
+        Aplicar ajustes del sector público
+      </Boton>
+    </div>
   );
 }
 
