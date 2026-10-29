@@ -170,7 +170,7 @@ function Panel({ salir }: { salir: () => void }) {
         {nuevo && (
           <div className="space-y-4">
             <Campo etiqueta="Nombre del espacio" ayuda="Es la dirección por la que entra la empresa. Solo minúsculas, números y guiones.">
-              <Entrada value={nuevo.espacio} placeholder="yeroz" onChange={(e) => setNuevo({ ...nuevo, espacio: aEspacio(e.target.value) })} autoFocus />
+              <Entrada value={nuevo.espacio} placeholder="nombre-de-la-empresa" onChange={(e) => setNuevo({ ...nuevo, espacio: aEspacio(e.target.value) })} autoFocus />
             </Campo>
             {nuevo.espacio && <p className="text-sm text-suave">Enlace: <b>{enlace(nuevo.espacio)}</b></p>}
             <div className="grid gap-4 sm:grid-cols-2">

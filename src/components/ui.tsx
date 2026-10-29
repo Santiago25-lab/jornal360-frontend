@@ -123,6 +123,11 @@ export function EntradaDinero({ valor, onCambio, ...p }: { valor: string | numbe
         {...p}
         inputMode="numeric"
         value={mostrar}
+        // Al entrar se selecciona el valor: lo que se escriba lo reemplaza en lugar de pegarse al final.
+        onFocus={(e) => {
+          e.target.select();
+          p.onFocus?.(e);
+        }}
         onChange={(e) => onCambio(e.target.value.replace(/\D/g, ''))}
         className={cx(claseEntrada, 'pl-7 tabular', p.className)}
       />
@@ -378,13 +383,22 @@ export function Tabla<T>({ columnas, filas, alClic, vacio = 'No hay registros', 
 
 export function Modal({ abierto, onCerrar, titulo, children, pie, ancho = 'md' }: { abierto: boolean; onCerrar: () => void; titulo: string; children: ReactNode; pie?: ReactNode; ancho?: 'sm' | 'md' | 'lg' | 'xl' }) {
   const ref = useRef<HTMLDivElement>(null);
+  // onCerrar suele ser una función nueva en cada render: se guarda en una ref para que el efecto
+  // corra solo al abrir. Si dependiera de ella, cada tecla devolvería el foco al primer elemento.
+  const cerrar = useRef(onCerrar);
+  cerrar.current = onCerrar;
   useEffect(() => {
     if (!abierto) return;
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onCerrar();
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && cerrar.current();
     document.addEventListener('keydown', esc);
-    ref.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus();
+    const dentro = ref.current;
+    if (dentro && !dentro.contains(document.activeElement)) {
+      // Primero el campo para escribir; la X de cerrar solo si la ventana no tiene campos.
+      const campo = dentro.querySelector<HTMLElement>('[autofocus], input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+      (campo ?? dentro.querySelector<HTMLElement>('button'))?.focus();
+    }
     return () => document.removeEventListener('keydown', esc);
-  }, [abierto, onCerrar]);
+  }, [abierto]);
   if (!abierto) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
