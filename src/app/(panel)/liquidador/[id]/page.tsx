@@ -360,6 +360,8 @@ function Valores({ l, alGuardar }: { l: any; alGuardar: (r: any) => void }) {
                     <div className="flex items-center gap-2">
                       {x.tipo === 'dinero' ? (
                         <EntradaDinero valor={actual} onCambio={(v) => setCambios({ ...cambios, [x.codigo]: v || '0' })} className="w-44" />
+                      ) : x.tipo === 'booleano' ? (
+                        <Interruptor activo={Number(actual) === 1} onCambio={(v) => setCambios({ ...cambios, [x.codigo]: v ? '1' : '0' })} etiqueta={Number(actual) === 1 ? 'Sí' : 'No'} />
                       ) : (
                         <Entrada
                           className="w-32"
