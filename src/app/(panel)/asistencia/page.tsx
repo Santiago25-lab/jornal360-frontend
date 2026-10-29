@@ -1,12 +1,12 @@
 'use client';
 
-import { CheckCheck, Copy, ExternalLink, FileSpreadsheet, MonitorSmartphone, Plus, RefreshCw, Tablet, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCheck, Copy, ExternalLink, FileSpreadsheet, MonitorSmartphone, Plus, RefreshCw, Tablet, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
 import { CodigoQR } from '@/components/codigo-qr';
 import { Importador } from '@/components/importador';
 import { Aviso, Boton, Campo, Cargando, cx, Encabezado, Entrada, Insignia, Modal, Pestanas, Selector, Tabla, Tarjeta, useAccion, useAvisos, Vacio } from '@/components/ui';
-import { borrar, post } from '@/lib/api';
+import { borrar, descargarBase64, post } from '@/lib/api';
 import { useCatalogos } from '@/lib/catalogos';
 import { useDatos } from '@/lib/datos';
 import { fecha, fechaHora, hoy, NOMBRE_TIPO_HORA, numero, sumarDias } from '@/lib/formato';
@@ -23,7 +23,7 @@ function Contenido() {
         activa={p}
         onCambio={setP}
         pestanas={[
-          { valor: 'hoy', etiqueta: 'Hoy' },
+          { valor: 'hoy', etiqueta: 'Por día' },
           { valor: 'marcaciones', etiqueta: 'Marcaciones' },
           { valor: 'horas', etiqueta: 'Horas por aprobar' },
           { valor: 'alertas', etiqueta: 'Alertas' },
@@ -51,45 +51,136 @@ export default function PaginaAsistencia() {
   );
 }
 
-const ESTADOS: Record<string, { t: string; tono: any }> = {
-  presente: { t: 'Trabajando', tono: 'exito' },
-  salio: { t: 'Ya salió', tono: 'neutro' },
-  sin_marcar: { t: 'Sin marcar', tono: 'peligro' },
-  programado: { t: 'Entra más tarde', tono: 'marca' },
-  sin_turno: { t: 'Sin turno hoy', tono: 'neutro' },
+const ESTADO_DIA: Record<string, { t: string; tono: 'neutro' | 'marca' | 'exito' | 'alerta' | 'peligro' }> = {
+  completo: { t: 'Completo', tono: 'exito' },
+  trabajando: { t: 'Trabajando', tono: 'marca' },
+  sin_salida: { t: 'Sin salida', tono: 'alerta' },
+  no_llego: { t: 'No llegó', tono: 'peligro' },
+  programado: { t: 'Aún no entra', tono: 'neutro' },
+  novedad: { t: 'Novedad', tono: 'marca' },
+  descanso: { t: 'Descanso', tono: 'neutro' },
+  festivo: { t: 'Festivo', tono: 'neutro' },
+  dia_especial: { t: 'Día especial', tono: 'neutro' },
 };
 
+const NOVEDAD: Record<string, string> = {
+  vacaciones: 'Vacaciones',
+  incapacidad_eg: 'Incapacidad',
+  incapacidad_laboral: 'Incapacidad laboral',
+  licencia_maternidad: 'Licencia de maternidad',
+  licencia_paternidad: 'Licencia de paternidad',
+  licencia_remunerada: 'Licencia',
+  licencia_no_remunerada: 'Licencia no remunerada',
+  suspension: 'Suspensión',
+  ausencia_injustificada: 'Ausencia',
+};
+
+/** 75 → "1 h 15 min". */
+const duracion = (m: number) => (m <= 0 ? '—' : `${Math.floor(m / 60) ? `${Math.floor(m / 60)} h ` : ''}${m % 60 ? `${m % 60} min` : ''}`.trim());
+
 function Hoy() {
-  const { datos, cargando, recargar } = useDatos<any>('/asistencia/hoy');
-  if (cargando && !datos) return <Cargando />;
-  if (!datos) return null;
+  const [dia, setDia] = useState(hoy());
+  const { datos, cargando, recargar } = useDatos<any>(`/asistencia/diario?fecha=${dia}`);
+  const { ejecutar, cargando: exportando } = useAccion();
+  const estado = (f: any) => (f.estado === 'novedad' ? { t: NOVEDAD[f.novedad] ?? 'Novedad', tono: 'marca' as const } : ESTADO_DIA[f.estado]);
+  const exportar = async () => {
+    const filas = (datos?.filas ?? []).map((f: any) => ({
+      empleado: f.empleado,
+      documento: f.documento,
+      entrada: f.entrada ?? '',
+      tarde: f.minutosTarde ? `${f.minutosTarde} min` : '',
+      salida: f.salida ?? '',
+      antes: f.minutosAntes ? `${f.minutosAntes} min` : '',
+      horas: duracion(f.minutosTrabajados),
+      estado: estado(f)?.t,
+    }));
+    const r: any = await ejecutar(() =>
+      post('/reportes/exportar', {
+        titulo: `Asistencia ${dia}`,
+        formato: 'excel',
+        columnas: [
+          { clave: 'empleado', titulo: 'Empleado' },
+          { clave: 'documento', titulo: 'Documento' },
+          { clave: 'entrada', titulo: 'Entrada' },
+          { clave: 'tarde', titulo: 'Llegó tarde' },
+          { clave: 'salida', titulo: 'Salida' },
+          { clave: 'antes', titulo: 'Salió antes' },
+          { clave: 'horas', titulo: 'Horas trabajadas' },
+          { clave: 'estado', titulo: 'Estado' },
+        ],
+        filas,
+      }),
+    );
+    if (r) descargarBase64(r.archivoBase64, r.nombre, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-4">
-        {[
-          { t: 'Trabajando ahora', v: datos.presentes, c: 'text-exito' },
-          { t: 'Ya salieron', v: datos.salieron, c: '' },
-          { t: 'Llegaron tarde', v: datos.tarde, c: 'text-alerta' },
-          { t: 'Sin marcar', v: datos.sinMarcar, c: 'text-peligro' },
-        ].map((x) => (
-          <Tarjeta key={x.t}>
-            <p className={cx('text-3xl font-semibold tabular', x.c)}>{x.v}</p>
-            <p className="text-sm text-suave">{x.t}</p>
-          </Tarjeta>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Boton tamano="sm" variante="secundario" aria-label="Día anterior" icono={<ChevronLeft className="h-4 w-4" />} onClick={() => setDia(sumarDias(dia, -1))} />
+          <Entrada type="date" value={dia} onChange={(e) => e.target.value && setDia(e.target.value)} className="w-40 sm:w-44" />
+          <Boton tamano="sm" variante="secundario" aria-label="Día siguiente" icono={<ChevronRight className="h-4 w-4" />} onClick={() => setDia(sumarDias(dia, 1))} />
+          {dia !== hoy() && (
+            <Boton tamano="sm" variante="fantasma" onClick={() => setDia(hoy())}>
+              Hoy
+            </Boton>
+          )}
+        </div>
+        <div className="ml-auto flex gap-2">
+          <Boton tamano="sm" variante="secundario" icono={<RefreshCw className="h-4 w-4" />} onClick={recargar}>
+            Actualizar
+          </Boton>
+          <Boton tamano="sm" variante="secundario" cargando={exportando} disabled={!datos?.filas?.length} icono={<FileSpreadsheet className="h-4 w-4" />} onClick={exportar}>
+            Excel
+          </Boton>
+        </div>
       </div>
-      <Tarjeta titulo={`Hoy, ${fecha(hoy())}`} accion={<Boton tamano="sm" variante="secundario" icono={<RefreshCw className="h-4 w-4" />} onClick={recargar}>Actualizar</Boton>}>
-        <Tabla
-          filas={datos.detalle}
-          columnas={[
-            { clave: 'empleado', titulo: 'Empleado' },
-            { clave: 'turno', titulo: 'Entra', celda: (f: any) => f.inicioTurno ?? '—' },
-            { clave: 'entrada', titulo: 'Marcó', celda: (f: any) => f.entrada ?? '—' },
-            { clave: 'estado', titulo: 'Estado', celda: (f: any) => <Insignia tono={ESTADOS[f.estado]?.tono}>{ESTADOS[f.estado]?.t}</Insignia> },
-            { clave: 'tarde', titulo: '', celda: (f: any) => f.tarde && <Insignia tono="alerta">Llegó tarde</Insignia> },
-          ]}
-        />
-      </Tarjeta>
+      {cargando && !datos ? (
+        <Cargando />
+      ) : datos ? (
+        <>
+          {(datos.festivo || datos.diaEspecial) && <Aviso>{datos.festivo ? `Festivo: ${datos.festivo}` : `Día especial: ${datos.diaEspecial}`}. No se espera que nadie trabaje.</Aviso>}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
+            {[
+              { t: 'Llegaron', v: datos.resumen.llegaron, c: 'text-exito' },
+              { t: 'Llegaron tarde', v: datos.resumen.tarde, c: 'text-alerta' },
+              { t: 'Salieron antes', v: datos.resumen.salieronAntes, c: 'text-alerta' },
+              { t: 'No llegaron', v: datos.resumen.noLlegaron, c: 'text-peligro' },
+              { t: 'Sin marcar salida', v: datos.resumen.sinSalida, c: '' },
+            ].map((x) => (
+              <Tarjeta key={x.t}>
+                <p className={cx('text-3xl font-semibold tabular', x.c)}>{x.v}</p>
+                <p className="text-sm text-suave">{x.t}</p>
+              </Tarjeta>
+            ))}
+          </div>
+          <Tarjeta titulo={dia === hoy() ? `Hoy, ${fecha(dia)}` : fecha(dia)} subtitulo="Primera entrada y última salida del día. La llegada tarde y la salida anticipada se miden con el turno de cada persona.">
+            <Tabla
+              filas={datos.filas}
+              clave={(f: any) => f.empleadoId}
+              vacio="No hay empleados activos"
+              columnas={[
+                {
+                  clave: 'empleado',
+                  titulo: 'Empleado',
+                  celda: (f: any) => (
+                    <div>
+                      <p className="font-medium">{f.empleado}</p>
+                      {f.cargo && <p className="text-xs text-suave">{f.cargo}</p>}
+                    </div>
+                  ),
+                },
+                { clave: 'entrada', titulo: 'Entrada', celda: (f: any) => <span className="tabular">{f.entrada ?? '—'}</span> },
+                { clave: 'tarde', titulo: 'Llegó tarde', celda: (f: any) => (f.minutosTarde ? <Insignia tono="alerta">{duracion(f.minutosTarde)}</Insignia> : '—') },
+                { clave: 'salida', titulo: 'Salida', celda: (f: any) => <span className="tabular">{f.salida ?? '—'}</span> },
+                { clave: 'antes', titulo: 'Salió antes', celda: (f: any) => (f.minutosAntes ? <Insignia tono="alerta">{duracion(f.minutosAntes)}</Insignia> : '—') },
+                { clave: 'horas', titulo: 'Horas trabajadas', derecha: true, celda: (f: any) => <span className="tabular">{duracion(f.minutosTrabajados)}</span> },
+                { clave: 'estado', titulo: 'Estado', celda: (f: any) => <Insignia tono={estado(f)?.tono}>{estado(f)?.t}</Insignia> },
+              ]}
+            />
+          </Tarjeta>
+        </>
+      ) : null}
     </div>
   );
 }

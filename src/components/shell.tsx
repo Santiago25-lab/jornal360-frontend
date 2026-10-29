@@ -1,25 +1,6 @@
 'use client';
 
-import {
-  Bell,
-  BookOpen,
-  CalendarClock,
-  ClipboardList,
-  FileBarChart,
-  Gift,
-  HelpCircle,
-  Home,
-  LogOut,
-  Menu,
-  Moon,
-  Search,
-  Settings,
-  Sun,
-  UserMinus,
-  Users,
-  Wallet,
-  X,
-} from 'lucide-react';
+import { Bell, BookOpen, Calculator, CalendarClock, ClipboardList, FileBarChart, Gift, HelpCircle, Home, LogOut, Menu, Moon, Search, Settings, Sun, UserMinus, Users, Wallet, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
@@ -39,6 +20,9 @@ const NAV = [
   { href: '/retiros', etiqueta: 'Retiros', icono: UserMinus },
   { href: '/reportes', etiqueta: 'Reportes', icono: FileBarChart },
 ];
+
+/** Herramientas aparte: no usan ni modifican los datos de la empresa. */
+const HERRAMIENTAS = [{ href: '/liquidador', etiqueta: 'Liquidador Express', icono: Calculator }];
 
 const ABAJO = [
   { href: '/configuracion', etiqueta: 'Configuración', icono: Settings },
@@ -90,6 +74,12 @@ function Barra({ onNavegar }: { onNavegar?: () => void }) {
       </Link>
       <nav className="flex flex-col gap-1" aria-label="Principal">
         {NAV.map((n) => (
+          <ElementoNav key={n.href} {...n} onClick={onNavegar} />
+        ))}
+      </nav>
+      <nav className="mt-6 flex flex-col gap-1 border-t border-borde pt-4" aria-label="Herramientas">
+        <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-suave">Herramientas</p>
+        {HERRAMIENTAS.map((n) => (
           <ElementoNav key={n.href} {...n} onClick={onNavegar} />
         ))}
       </nav>
@@ -174,6 +164,7 @@ function BuscadorRapido({ abierto, onCerrar }: { abierto: boolean; onCerrar: () 
     () =>
       [
         ...NAV,
+        ...HERRAMIENTAS,
         ...ABAJO,
         { href: '/configuracion?seccion=calendario', etiqueta: 'Días laborales y calendario' },
         { href: '/configuracion?seccion=parametros', etiqueta: 'Salario mínimo, recargos y parámetros' },
@@ -242,9 +233,9 @@ export function Shell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen lg:p-4">
-      <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1600px] overflow-hidden bg-tarjeta lg:rounded-3xl lg:border lg:border-borde lg:shadow-suave">
-        <aside className="hidden w-60 flex-none border-r border-borde lg:block">
+    <div className="min-h-screen">
+      <div className="flex min-h-screen bg-tarjeta">
+        <aside className="sticky top-0 hidden h-screen w-60 flex-none overflow-y-auto border-r border-borde lg:block">
           <Barra />
         </aside>
         {menu && (

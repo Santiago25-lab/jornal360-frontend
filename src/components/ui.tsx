@@ -25,10 +25,11 @@ export function Boton({
       {...p}
       disabled={p.disabled || cargando}
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-marca-500 focus-visible:ring-offset-2 focus-visible:ring-offset-fondo disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap',
-        tamano === 'sm' && 'h-8 px-3 text-sm',
-        tamano === 'md' && 'h-10 px-4 text-[15px]',
-        tamano === 'lg' && 'h-12 px-6 text-base',
+        // En celular un texto largo baja a la siguiente línea en lugar de salirse de la pantalla.
+        'inline-flex max-w-full items-center justify-center gap-2 rounded-xl text-center font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-marca-500 focus-visible:ring-offset-2 focus-visible:ring-offset-fondo disabled:opacity-50 disabled:cursor-not-allowed sm:whitespace-nowrap',
+        tamano === 'sm' && 'min-h-8 px-3 py-1 text-sm',
+        tamano === 'md' && 'min-h-10 px-4 py-2 text-[15px]',
+        tamano === 'lg' && 'min-h-12 px-6 py-2 text-base',
         variante === 'primario' && 'bg-marca-500 text-white hover:bg-marca-600 shadow-sm',
         variante === 'secundario' && 'bg-tarjeta border border-borde text-texto hover:bg-marca-50',
         variante === 'fantasma' && 'text-suave hover:text-texto hover:bg-marca-50',
@@ -177,28 +178,44 @@ export function Casilla({ marcada, onCambio, etiqueta, descripcion, disabled }: 
 }
 
 /** Opciones en forma de botones grandes para marcar (días, tipos, etc.). */
+/**
+ * Opciones en forma de tarjetas para marcar (días, tipos, etc.). Son radios o casillas accesibles,
+ * no botones: dentro de la etiqueta de un Campo, un botón quedaría «etiquetado» y hacer clic en el
+ * título del campo lo seleccionaría.
+ */
 export function Opciones<T extends string | number>({ opciones, valor, onCambio, multiple }: { opciones: { valor: T; etiqueta: string; descripcion?: string }[]; valor: T | T[]; onCambio: (v: any) => void; multiple?: boolean }) {
   const activo = (v: T) => (multiple ? (valor as T[]).includes(v) : valor === v);
+  const elegir = (v: T) => {
+    if (!multiple) return onCambio(v);
+    const l = valor as T[];
+    onCambio(l.includes(v) ? l.filter((x) => x !== v) : [...l, v]);
+  };
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" role={multiple ? 'group' : 'radiogroup'}>
       {opciones.map((o) => (
-        <button
+        <div
           key={String(o.valor)}
-          type="button"
-          aria-pressed={activo(o.valor)}
-          onClick={() => {
-            if (!multiple) return onCambio(o.valor);
-            const l = valor as T[];
-            onCambio(l.includes(o.valor) ? l.filter((x) => x !== o.valor) : [...l, o.valor]);
+          role={multiple ? 'checkbox' : 'radio'}
+          aria-checked={activo(o.valor)}
+          tabIndex={0}
+          onClick={(e) => {
+            e.preventDefault();
+            elegir(o.valor);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              elegir(o.valor);
+            }
           }}
           className={cx(
-            'rounded-xl border px-3.5 py-2 text-left text-sm transition',
+            'cursor-pointer select-none rounded-xl border px-3.5 py-2 text-left text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-marca-500',
             activo(o.valor) ? 'border-marca-500 bg-marca-50 text-marca-700 ring-1 ring-marca-500' : 'border-borde bg-tarjeta hover:border-marca-500/50',
           )}
         >
           <span className="font-medium">{o.etiqueta}</span>
           {o.descripcion && <span className="block text-xs text-suave">{o.descripcion}</span>}
-        </button>
+        </div>
       ))}
     </div>
   );

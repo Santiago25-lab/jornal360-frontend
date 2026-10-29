@@ -61,7 +61,7 @@ function Linea({ l }: { l: any }) {
   );
 }
 
-export function PasoAPaso({ det, periodoId, empleadoId }: { det: any; periodoId: string; empleadoId: string }) {
+export function PasoAPaso({ det, periodoId, empleadoId, urlDesprendible }: { det: any; periodoId?: string; empleadoId?: string; urlDesprendible?: string }) {
   const { error } = useAvisos();
   const grupo = (tipo: string) => det.lineas.filter((l: any) => l.tipo === tipo);
   const bloques = [
@@ -76,7 +76,7 @@ export function PasoAPaso({ det, periodoId, empleadoId }: { det: any; periodoId:
         <div className="text-sm text-suave">
           {det.documento} {det.cargo ? `· ${det.cargo}` : ''} · {det.dias?.salario ?? '—'} días pagados
         </div>
-        <Boton tamano="sm" variante="secundario" icono={<Download className="h-4 w-4" />} onClick={() => descargar(`/periodos/${periodoId}/empleados/${empleadoId}/desprendible`, `desprendible-${det.empleado}.pdf`).catch(error)}>
+        <Boton tamano="sm" variante="secundario" icono={<Download className="h-4 w-4" />} onClick={() => descargar(urlDesprendible ?? `/periodos/${periodoId}/empleados/${empleadoId}/desprendible`, `desprendible-${det.empleado}.pdf`).catch(error)}>
           Desprendible PDF
         </Boton>
       </div>
