@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import { get, guardarToken, obtenerToken } from './api';
+import { get, guardarToken, obtenerToken, rutaIngreso } from './api';
 
 export interface Usuario {
   id: string;
@@ -14,6 +14,8 @@ export interface Usuario {
   debeCambiarPassword: boolean;
   asistenteCompletado: boolean;
   configuracion: any;
+  espacio?: string;
+  soporte?: boolean;
 }
 
 const Ctx = createContext<{ usuario: Usuario | null; recargar: () => Promise<void>; salir: () => void }>({
@@ -28,7 +30,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const recargar = useCallback(async () => {
     if (!obtenerToken()) {
-      router.replace('/login');
+      router.replace(rutaIngreso());
       return;
     }
     try {
@@ -51,7 +53,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
       clearTimeout(t);
       t = setTimeout(() => {
         guardarToken(null);
-        window.location.href = '/login?inactividad=1';
+        window.location.href = `${rutaIngreso()}?inactividad=1`;
       }, minutos * 60000);
     };
     const eventos = ['mousemove', 'keydown', 'click', 'touchstart'];
@@ -65,8 +67,9 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const salir = useCallback(() => {
     guardarToken(null);
-    router.replace('/login');
-  }, [router]);
+    // En modo soporte se vuelve al panel de la plataforma.
+    router.replace(usuario?.soporte ? '/' : rutaIngreso());
+  }, [router, usuario?.soporte]);
 
   return <Ctx.Provider value={{ usuario, recargar, salir }}>{children}</Ctx.Provider>;
 }

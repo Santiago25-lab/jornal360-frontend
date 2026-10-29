@@ -38,7 +38,7 @@ export default function Asistente() {
     if (!(await guardarPendientes())) return;
     await e.guardarEmpresa({ asistenteCompletado: true, asistentePaso: PASOS.length - 1 });
     await sesion.recargar();
-    router.push('/');
+    router.push('/inicio');
   };
 
   if (paso === null) return <Cargando />;

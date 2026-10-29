@@ -5,6 +5,38 @@
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api').replace(/\/$/, '');
 
 const CLAVE_TOKEN = 'jornal360.token';
+const CLAVE_ESPACIO = 'jornal360.espacio';
+const CLAVE_PLATAFORMA = 'jornal360.plataforma';
+
+function leer(clave: string): string | null {
+  try {
+    return localStorage.getItem(clave);
+  } catch {
+    return null;
+  }
+}
+
+function escribir(clave: string, v: string | null) {
+  try {
+    if (v) localStorage.setItem(clave, v);
+    else localStorage.removeItem(clave);
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+/** Espacio de la empresa en la que está la sesión (jornal360…/<espacio>). */
+export const obtenerEspacio = () => leer(CLAVE_ESPACIO);
+export const guardarEspacio = (e: string | null) => escribir(CLAVE_ESPACIO, e);
+/** Dirección de ingreso del espacio actual; sin espacio, la página para escribirlo. */
+export const rutaIngreso = () => {
+  const e = obtenerEspacio();
+  return e ? `/${e}` : '/login';
+};
+
+/** Sesión del administrador de la plataforma (separada de la de empresa). */
+export const obtenerTokenPlataforma = () => leer(CLAVE_PLATAFORMA);
+export const guardarTokenPlataforma = (t: string | null) => escribir(CLAVE_PLATAFORMA, t);
 
 export function obtenerToken(): string | null {
   try {
@@ -43,9 +75,9 @@ export class ErrorApi extends Error {
 
 type Metodo = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
-export async function api<T = any>(ruta: string, opciones: { metodo?: Metodo; cuerpo?: unknown; publico?: boolean } = {}): Promise<T> {
+export async function api<T = any>(ruta: string, opciones: { metodo?: Metodo; cuerpo?: unknown; publico?: boolean; plataforma?: boolean } = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = obtenerToken();
+  const token = opciones.plataforma ? obtenerTokenPlataforma() : obtenerToken();
   if (token && !opciones.publico) headers.Authorization = `Bearer ${token}`;
   let res: Response;
   try {
@@ -61,9 +93,13 @@ export async function api<T = any>(ruta: string, opciones: { metodo?: Metodo; cu
   const tipo = res.headers.get('content-type') ?? '';
   const datos = tipo.includes('application/json') ? await res.json().catch(() => null) : null;
   if (!res.ok) {
-    if (res.status === 401 && !opciones.publico && ruta !== '/auth/login') {
+    if (res.status === 401 && opciones.plataforma && ruta !== '/plataforma/login') {
+      guardarTokenPlataforma(null);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') window.location.href = '/?vencida=1';
+    } else if (res.status === 401 && !opciones.publico && !opciones.plataforma && ruta !== '/auth/login') {
       guardarToken(null);
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) window.location.href = '/login?vencida=1';
+      const ingreso = rutaIngreso();
+      if (typeof window !== 'undefined' && window.location.pathname !== ingreso) window.location.href = `${ingreso}?vencida=1`;
     }
     throw new ErrorApi(datos?.mensaje ?? `Error ${res.status}`, res.status, datos);
   }
@@ -75,6 +111,13 @@ export const post = <T = any>(ruta: string, cuerpo: unknown = {}) => api<T>(ruta
 export const patch = <T = any>(ruta: string, cuerpo: unknown) => api<T>(ruta, { metodo: 'PATCH', cuerpo });
 export const put = <T = any>(ruta: string, cuerpo: unknown) => api<T>(ruta, { metodo: 'PUT', cuerpo });
 export const borrar = <T = any>(ruta: string) => api<T>(ruta, { metodo: 'DELETE' });
+
+/** Llamadas del panel de la plataforma (con la sesión del administrador de la plataforma). */
+export const plataforma = {
+  get: <T = any>(ruta: string) => api<T>(ruta, { plataforma: true }),
+  post: <T = any>(ruta: string, cuerpo: unknown = {}) => api<T>(ruta, { metodo: 'POST', cuerpo, plataforma: true }),
+  patch: <T = any>(ruta: string, cuerpo: unknown) => api<T>(ruta, { metodo: 'PATCH', cuerpo, plataforma: true }),
+};
 
 /** Descarga un archivo binario (PDF) de una ruta protegida. */
 export async function descargar(ruta: string, nombre: string) {

@@ -512,7 +512,7 @@ export function CambiarPassword({ forzado }: { forzado?: boolean }) {
           if (await ejecutar(() => post('/auth/cambiar-password', { actual: d.actual, nueva: d.nueva }), 'Contraseña cambiada')) {
             setD({ actual: '', nueva: '', repetir: '' });
             await sesion.recargar();
-            if (forzado) window.location.href = '/';
+            if (forzado) window.location.href = '/inicio';
           }
         }}
       >

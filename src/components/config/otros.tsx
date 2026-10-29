@@ -17,6 +17,8 @@ const ROLES = [
   { valor: 'contador', etiqueta: 'Contador', descripcion: 'Consulta, reportes y contabilidad' },
   { valor: 'supervisor', etiqueta: 'Supervisor', descripcion: 'Asistencia de su equipo' },
 ];
+/** Por ahora el espacio solo crea superusuarios; los demás roles se habilitan cuando se definan sus permisos. */
+const ROLES_DISPONIBLES = ROLES.filter((r) => r.valor === 'superusuario');
 
 export function SeccionUsuarios() {
   const { datos, recargar } = useDatos<any[]>('/usuarios');
@@ -33,9 +35,9 @@ export function SeccionUsuarios() {
   return (
     <Seccion
       titulo="Usuarios"
-      descripcion="Quién entra al sistema y qué puede hacer. Cada acción queda en la auditoría con su nombre."
+      descripcion="Quién entra a este espacio. Cada acción queda en la auditoría con su nombre. Por ahora se crean superusuarios; los roles con funciones limitadas llegan pronto."
       accion={
-        <Boton tamano="sm" icono={<UserPlus className="h-4 w-4" />} onClick={() => setEd({ usuario: '', nombre: '', correo: '', rol: 'analista', password: '' })}>
+        <Boton tamano="sm" icono={<UserPlus className="h-4 w-4" />} onClick={() => setEd({ usuario: '', nombre: '', correo: '', rol: 'superusuario', password: '' })}>
           Nuevo usuario
         </Boton>
       }
@@ -79,7 +81,7 @@ export function SeccionUsuarios() {
               </Campo>
             </div>
             <Campo etiqueta="Rol">
-              <Opciones valor={ed.rol} onCambio={(v) => setEd({ ...ed, rol: v })} opciones={ROLES} />
+              <Opciones valor={ed.rol} onCambio={(v) => setEd({ ...ed, rol: v })} opciones={ROLES_DISPONIBLES.some((r) => r.valor === ed.rol) ? ROLES_DISPONIBLES : ROLES.filter((r) => r.valor === ed.rol || r.valor === 'superusuario')} />
             </Campo>
             {ed.id && <Interruptor activo={ed.activo} onCambio={(v) => setEd({ ...ed, activo: v })} etiqueta="Puede ingresar" />}
           </div>

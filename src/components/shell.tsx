@@ -30,7 +30,7 @@ import { Logo } from './logo';
 import { cx, Modal } from './ui';
 
 const NAV = [
-  { href: '/', etiqueta: 'Inicio', icono: Home },
+  { href: '/inicio', etiqueta: 'Inicio', icono: Home },
   { href: '/empleados', etiqueta: 'Empleados', icono: Users },
   { href: '/asistencia', etiqueta: 'Asistencia', icono: CalendarClock },
   { href: '/novedades', etiqueta: 'Novedades', icono: ClipboardList },
@@ -85,7 +85,7 @@ function Barra({ onNavegar }: { onNavegar?: () => void }) {
   const { salir } = useSesion();
   return (
     <div className="flex h-full flex-col px-3 py-5">
-      <Link href="/" className="mb-8 px-3" onClick={onNavegar}>
+      <Link href="/inicio" className="mb-8 px-3" onClick={onNavegar}>
         <Logo />
       </Link>
       <nav className="flex flex-col gap-1" aria-label="Principal">
@@ -137,7 +137,7 @@ function Notificaciones() {
             {lista.map((n) => (
               <Link
                 key={n.id}
-                href={n.enlace ?? '/'}
+                href={n.enlace ?? '/inicio'}
                 onClick={() => {
                   setAbierto(false);
                   if (!n.leida) post('/notificaciones/leer', { ids: [n.id] }).then(cargar);
@@ -224,7 +224,7 @@ function BuscadorRapido({ abierto, onCerrar }: { abierto: boolean; onCerrar: () 
 }
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { usuario } = useSesion();
+  const { usuario, salir } = useSesion();
   const [menu, setMenu] = useState(false);
   const [buscar, setBuscar] = useState(false);
   const [oscuro, cambiarTema] = useTema();
@@ -282,6 +282,16 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="text-sm font-medium">{usuario?.nombre}</span>
             </div>
           </header>
+          {usuario?.soporte && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-alerta/40 bg-alerta/10 px-4 py-2 text-sm sm:px-6">
+              <span>
+                Modo soporte de la plataforma en el espacio <b>{usuario.espacio}</b>. Lo que haga queda en la auditoría a su nombre.
+              </span>
+              <button onClick={salir} className="font-medium text-marca-600 hover:underline">
+                Volver al panel de la plataforma
+              </button>
+            </div>
+          )}
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
