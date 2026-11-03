@@ -143,7 +143,7 @@ function SectorPublico({ alAplicar }: { alAplicar: () => void }) {
     const ok = await confirmar({
       titulo: 'Ajustes del sector público territorial',
       mensaje:
-        'Cambia la prima de servicios a 15 días por año, deja de provisionar intereses de cesantías a los afiliados al Fondo Nacional del Ahorro y agrega prima de navidad, prima de vacaciones, bonificación por servicios prestados, bonificación de recreación y subsidio de alimentación (en borrador). Los topes vienen con valores de ejemplo: confírmelos con el decreto salarial del año en Parámetros.',
+        'Cambia el SENA al 0,5 % y agrega los aportes a la ESAP (0,5 %) y a las escuelas industriales (1 %); pone la jornada en 44 horas y el recargo dominical en 100 %; cambia la prima de servicios a 15 días por año, deja de provisionar intereses de cesantías a los afiliados al Fondo Nacional del Ahorro y agrega prima de navidad, prima de vacaciones, bonificación por servicios prestados, bonificación de recreación y subsidio de alimentación (en borrador). Los topes vienen con valores de ejemplo: confírmelos con el decreto salarial del año en Parámetros.',
       confirmar: 'Aplicar',
     });
     if (!ok) return;
