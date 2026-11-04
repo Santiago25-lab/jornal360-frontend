@@ -1,10 +1,11 @@
 'use client';
 
-import { Building2, CalendarDays, Calculator, Clock, Database, FileCog, KeyRound, Layers, ListTree, QrCode, ShieldCheck, Table2, Users } from 'lucide-react';
+import { Building2, CalendarDays, Calculator, Clock, Database, FileCog, KeyRound, Layers, ListTree, Mail, QrCode, ShieldCheck, Table2, Users } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { guardarPendientes, useEmpresa } from '@/components/config/comun';
 import { SeccionConceptos } from '@/components/config/conceptos';
+import { SeccionCorreos } from '@/components/config/correos';
 import { SeccionEstructura } from '@/components/config/estructura';
 import { CambiarPassword, SeccionAsistencia, SeccionCalendario, SeccionCampos, SeccionEmpresa, SeccionJornada, SeccionReglas } from '@/components/config/general';
 import { SeccionRespaldo, SeccionFormatos, SeccionUsuarios } from '@/components/config/otros';
@@ -16,7 +17,8 @@ const SECCIONES = [
   { valor: 'calendario', etiqueta: 'Días laborales y festivos', icono: CalendarDays, ayuda: 'Qué días se trabaja' },
   { valor: 'jornada', etiqueta: 'Jornada y horas extra', icono: Clock, ayuda: 'Nocturna, tolerancias' },
   { valor: 'estructura', etiqueta: 'Sedes, áreas y turnos', icono: Layers, ayuda: 'Grupos de pago, entidades' },
-  { valor: 'asistencia', etiqueta: 'Marcación', icono: QrCode, ayuda: 'QR, celular, kiosco' },
+  { valor: 'asistencia', etiqueta: 'Marcación', icono: QrCode, ayuda: 'QR, celular, horarios' },
+  { valor: 'correos', etiqueta: 'Correos y avisos', icono: Mail, ayuda: 'Cumpleaños, ausencias' },
   { valor: 'parametros', etiqueta: 'Parámetros de ley', icono: Calculator, ayuda: 'SMMLV, UVT, porcentajes' },
   { valor: 'tablas', etiqueta: 'Tablas por rangos', icono: Table2, ayuda: 'FSP, ARL, retención' },
   { valor: 'conceptos', etiqueta: 'Conceptos y fórmulas', icono: ListTree, ayuda: 'Qué se paga y descuenta' },
@@ -87,6 +89,7 @@ function Contenido() {
           {s === 'jornada' && <SeccionJornada e={e} />}
           {s === 'estructura' && <SeccionEstructura />}
           {s === 'asistencia' && <SeccionAsistencia e={e} />}
+          {s === 'correos' && <SeccionCorreos e={e} />}
           {s === 'parametros' && <SeccionParametros />}
           {s === 'tablas' && <SeccionTablas />}
           {s === 'conceptos' && <SeccionConceptos />}

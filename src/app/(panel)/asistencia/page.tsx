@@ -79,9 +79,20 @@ const NOVEDAD: Record<string, string> = {
 const duracion = (m: number) => (m <= 0 ? '—' : `${Math.floor(m / 60) ? `${Math.floor(m / 60)} h ` : ''}${m % 60 ? `${m % 60} min` : ''}`.trim());
 
 function Hoy() {
-  const [dia, setDia] = useState(hoy());
+  const q = useSearchParams();
+  const [dia, setDia] = useState(/^\d{4}-\d{2}-\d{2}$/.test(q.get('fecha') ?? '') ? q.get('fecha')! : hoy());
   const { datos, cargando, recargar } = useDatos<any>(`/asistencia/diario?fecha=${dia}`);
   const { ejecutar, cargando: exportando } = useAccion();
+  const { confirmar } = useAvisos();
+  const registrarAusencia = async (f: any) => {
+    const ok = await confirmar({
+      titulo: 'Registrar ausencia',
+      mensaje: `¿Registrar a ${f.empleado} como ausente sin justificación el ${fecha(dia)}? Ese día no se le pagará. Si tenía permiso o incapacidad, registre mejor esa novedad en Novedades.`,
+      confirmar: 'Registrar ausencia',
+      peligro: true,
+    });
+    if (ok && (await ejecutar(() => post('/novedades/dias', { empleadoId: f.empleadoId, tipo: 'ausencia_injustificada', desde: dia, hasta: dia, descripcion: 'Registrada desde Asistencia → Por día' }), 'Ausencia registrada'))) recargar();
+  };
   const estado = (f: any) => (f.estado === 'novedad' ? { t: NOVEDAD[f.novedad] ?? 'Novedad', tono: 'marca' as const } : ESTADO_DIA[f.estado]);
   const exportar = async () => {
     const filas = (datos?.filas ?? []).map((f: any) => ({
@@ -175,7 +186,20 @@ function Hoy() {
                 { clave: 'salida', titulo: 'Salida', celda: (f: any) => <span className="tabular">{f.salida ?? '—'}</span> },
                 { clave: 'antes', titulo: 'Salió antes', celda: (f: any) => (f.minutosAntes ? <Insignia tono="alerta">{duracion(f.minutosAntes)}</Insignia> : '—') },
                 { clave: 'horas', titulo: 'Horas trabajadas', derecha: true, celda: (f: any) => <span className="tabular">{duracion(f.minutosTrabajados)}</span> },
-                { clave: 'estado', titulo: 'Estado', celda: (f: any) => <Insignia tono={estado(f)?.tono}>{estado(f)?.t}</Insignia> },
+                {
+                  clave: 'estado',
+                  titulo: 'Estado',
+                  celda: (f: any) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Insignia tono={estado(f)?.tono}>{estado(f)?.t}</Insignia>
+                      {f.estado === 'no_llego' && (
+                        <button className="text-sm text-peligro hover:underline" onClick={() => registrarAusencia(f)}>
+                          Registrar ausencia
+                        </button>
+                      )}
+                    </div>
+                  ),
+                },
               ]}
             />
           </Tarjeta>

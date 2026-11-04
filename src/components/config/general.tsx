@@ -367,6 +367,39 @@ export function SeccionAsistencia({ e }: { e: Empresa }) {
                   ]}
                 />
               </Campo>
+              <div className="mt-6 border-t border-borde pt-5">
+                <h3 className="font-semibold">Horario para marcar</h3>
+                <p className="mb-2 text-sm text-suave">El sistema mira el turno de cada empleado: decide solo si es entrada, salida a almorzar, regreso o salida, y no deja marcar a deshoras.</p>
+                <Ajuste etiqueta="Se puede marcar desde" descripcion="Minutos antes de que empiece el turno.">
+                  <EntradaNumero valor={b.ventanaAntesMinutos} onCambio={(v) => setB({ ...b, ventanaAntesMinutos: v })} unidad="minutos antes" min={0} max={240} />
+                </Ajuste>
+                <Ajuste etiqueta="Se puede marcar hasta" descripcion="Horas después de que termina el turno (para horas extra).">
+                  <EntradaNumero valor={Math.round(b.ventanaDespuesMinutos / 6) / 10} onCambio={(v) => setB({ ...b, ventanaDespuesMinutos: Math.round(v * 60) })} unidad="horas después" min={0} max={12} paso={0.5} />
+                </Ajuste>
+                <Campo etiqueta="Si alguien intenta marcar fuera de ese horario" className="mt-3">
+                  <Opciones
+                    valor={b.fueraDeHorario}
+                    onCambio={(v) => setB({ ...b, fueraDeHorario: v })}
+                    opciones={[
+                      { valor: 'estricto', etiqueta: 'No dejar marcar', descripcion: 'Le muestra a qué hora puede marcar' },
+                      { valor: 'flexible', etiqueta: 'Dejar, pero avisarme', descripcion: 'Queda señalada para revisarla' },
+                    ]}
+                  />
+                </Campo>
+                <div className="py-3">
+                  <Interruptor activo={b.permitirDiasSinTurno} onCambio={(v) => setB({ ...b, permitirDiasSinTurno: v })} etiqueta="Permitir marcar en días de descanso" descripcion="Por ejemplo, si a veces se trabaja un domingo. Ese día se usa el horario general de abajo." />
+                </div>
+                <Ajuste etiqueta="Horario general" descripcion="Para empleados sin turno asignado (y días de descanso, si se permiten).">
+                  <span className="flex items-center gap-2">
+                    <Entrada type="time" value={b.sinTurnoInicio} onChange={(x) => setB({ ...b, sinTurnoInicio: x.target.value })} className="w-32" />
+                    <span className="text-suave">a</span>
+                    <Entrada type="time" value={b.sinTurnoFin} onChange={(x) => setB({ ...b, sinTurnoFin: x.target.value })} className="w-32" />
+                  </span>
+                </Ajuste>
+                <Ajuste etiqueta="Avisar que alguien no ha llegado" descripcion="Minutos después del inicio del turno. Aparece en la campanita (y por correo, si lo activó). 0 = no avisar.">
+                  <EntradaNumero valor={b.avisoAusenciaMinutos} onCambio={(v) => setB({ ...b, avisoAusenciaMinutos: v })} unidad="minutos" min={0} max={480} />
+                </Ajuste>
+              </div>
             </div>
           </div>
         )}

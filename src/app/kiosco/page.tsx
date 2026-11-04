@@ -20,8 +20,8 @@ function Kiosco() {
   const [fase, setFase] = useState<Fase>('documento');
   const [documento, setDocumento] = useState('');
   const [pin, setPin] = useState('');
-  const [persona, setPersona] = useState<{ empleado: string; siguiente: string } | null>(null);
-  const [resultado, setResultado] = useState<{ tipo: string; hora: string } | null>(null);
+  const [persona, setPersona] = useState<{ empleado: string; siguiente: string; momento?: string; fueraDeHorario?: string | null } | null>(null);
+  const [resultado, setResultado] = useState<{ tipo: string; hora: string; momento?: string; saludo?: string } | null>(null);
   const [mensaje, setMensaje] = useState('');
   const [reloj, setReloj] = useState('');
 
@@ -90,7 +90,7 @@ function Kiosco() {
   const marcar = async () => {
     try {
       const r = await api('/publico/kiosco/marcar', { metodo: 'POST', publico: true, cuerpo: { llave, documento, pin } });
-      setResultado({ tipo: r.tipo, hora: r.hora.slice(11, 16) });
+      setResultado({ tipo: r.tipo, hora: r.hora.slice(11, 16), momento: r.momento, saludo: r.saludo });
       setFase('hecho');
     } catch (e) {
       setMensaje((e as Error).message);
@@ -174,7 +174,8 @@ function Kiosco() {
         {fase === 'confirmar' && persona && (
           <div className="animate-entrar">
             <p className="text-5xl font-semibold">{persona.empleado}</p>
-            <p className="mt-3 text-2xl text-suave">¿Marcar {persona.siguiente === 'entrada' ? 'ENTRADA' : 'SALIDA'}?</p>
+            <p className="mt-3 text-2xl text-suave">¿Marcar {persona.momento === 'regreso' ? 'REGRESO' : persona.siguiente === 'entrada' ? 'ENTRADA' : 'SALIDA'}?</p>
+            {persona.fueraDeHorario && <p className="mx-auto mt-3 max-w-md rounded-xl bg-alerta/10 p-3 text-base">Está fuera de su horario. Se registra, pero el administrador la revisará.</p>}
             <div className="mt-10 flex gap-4">
               <Boton variante="secundario" tamano="lg" className="h-20 w-48 text-xl" onClick={reiniciar}>
                 No soy yo
@@ -188,8 +189,9 @@ function Kiosco() {
         {fase === 'hecho' && resultado && (
           <div className="animate-entrar">
             <CheckCircle2 className="mx-auto h-28 w-28 text-exito" />
-            <p className="mt-4 text-4xl font-semibold">{resultado.tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada'}</p>
+            <p className="mt-4 text-4xl font-semibold">{resultado.momento === 'regreso' ? 'Regreso registrado' : resultado.tipo === 'entrada' ? 'Entrada registrada' : 'Salida registrada'}</p>
             <p className="mt-2 text-7xl font-semibold tabular">{resultado.hora}</p>
+            {resultado.saludo && <p className="mt-4 text-2xl text-suave">{resultado.saludo}</p>}
           </div>
         )}
         {fase === 'error' && (
